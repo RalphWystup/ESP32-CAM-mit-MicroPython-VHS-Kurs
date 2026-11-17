@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+firmware.bin
+pakete/
+protokoll/
+kameras_protokoll.csv
+ap.json
+wlan.json

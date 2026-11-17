@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="de" xml:lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>ESP32-CAM mit MicroPython – VHS-Kurs</title>
+  <style>
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <style>
+  body{font-family:"Segoe UI",Arial,sans-serif;max-width:60rem;margin:0 auto;padding:1.2rem 1rem;color:#000;background:#fff;line-height:1.45}
+  h1{font-size:1.6rem}h2{font-size:1.25rem;margin-top:1.6rem;border-bottom:1px solid #ccc}table{border-collapse:collapse;width:100%;font-size:.92rem}
+  th,td{border-bottom:1px solid #ddd;padding:.3rem .4rem;text-align:left;vertical-align:top}code{font-size:.88em;background:#f4f4f4;padding:0 .2em}
+  pre{background:#f4f4f4;padding:.6rem;overflow-x:auto}.oben{background:#f4f4f4;border:1px solid #ccc;padding:.6rem .8rem;margin-bottom:1rem}
+  </style>
+</head>
+<body>
+<div class="oben"><b>Prof. Dr.-Ing. Ralph Wystup M.Sc. — erstellt mit KI und Agent (Claude Code, Anthropic)</b><br>Anleitung als PDF: <a href="LIESMICH_1.8.pdf">LIESMICH_1.8.pdf</a> · für Teilnehmer: <a href="Teilnehmer/LIESMICH_Teilnehmer_1.3.pdf">LIESMICH_Teilnehmer_1.3.pdf</a> · Quelltexte und Werkzeuge: <a href="https://github.com/RalphWystup/ESP32-CAM-mit-MicroPython-VHS-Kurs">Repositorium</a></div>
+<h1 id="vhs-kurs-esp32-cam-mit-micropython">VHS-Kurs „ESP32-CAM mit
+MicroPython“</h1>
+<p>Prof. Dr.-Ing. Ralph Wystup M.Sc. · Ordner <code>C:\VHS_Kurs</code> ·
+Stand 17.11.2026, Fassung 1.8 der Anleitung (ersetzt LIESMICH_1.7.md;
+Installationsseite 1.4, Erklärung Download-Modus nach dem
+Einstecken)</p>
+<h2 id="ordner">Ordner</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Ordner</th>
+<th>Inhalt</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>Teilnehmer\</code></td>
+<td>alles für die Kursrechner (kann so auf einen USB-Stick): oben die
+zwei Batch-Dateien und <code>LIESMICH_Teilnehmer_1.3.md</code>;
+<code>Kameraprogramme\</code> zum Lesen, <code>Werkzeuge\</code>
+(Hilfsprogramme), <code>pakete\</code> (Thonny 5.0.1,
+CH340-Treiber)</td>
+</tr>
+<tr class="even">
+<td><code>Dozent\</code></td>
+<td>oben die Batch-Datei der Installationsseite;
+<code>Kameraprogramme\</code> (alles, was auf die Kamera kommt, mit
+<code>firmware.bin</code>), <code>Werkzeuge\</code> (Installationsseite,
+Konfiguration, Überwachung, Prüfwerkzeuge), <code>protokoll\</code>,
+<code>sicherung\</code>, <code>kameras_protokoll.csv</code></td>
+</tr>
+<tr class="odd">
+<td><code>alt\</code></td>
+<td>überholte Fassungen</td>
+</tr>
+</tbody>
+</table>
+<h2 id="für-den-dozenten-kameras-vorbereiten">Für den Dozenten: Kameras
+vorbereiten</h2>
+<ol type="1">
+<li>Einmal <code>Teilnehmer\Teilnehmer_1_PC_einrichten_1.6.bat</code>
+(installiert Thonny, Pakete, USB-Treiber, Thonny-Einstellung – nur was
+fehlt).</li>
+<li>Thonny schließen.
+<code>Dozent\Dozent_Kameras_installieren_1.4.bat</code> doppelklicken –
+die <strong>Installationsseite</strong> öffnet sich im Browser
+(<code>http://127.0.0.1:8765/</code>; das schwarze Fenster offen
+lassen).</li>
+<li><strong>Eine</strong> Kamera per USB anstecken, Nummer eintragen (1,
+2, 3 …), <strong>„Kamera installieren“</strong> drücken. Die Seite zeigt
+jeden Schritt:
+<ul>
+<li>Anschluss suchen und vorbereiten (die COM-Nummer wird automatisch
+gefunden),</li>
+<li>Firmware: eine werksfrische Kamera bekommt MicroPython 1.27 mit
+Kameratreiber (<code>firmware.bin</code>, etwa 2 Minuten); der
+Flash-Modus wird automatisch über das USB-Brett geschaltet (am 17.11.
+geprüft), nur wenn das nicht geht, sagt die Seite „IO0 halten,
+einstecken“ an,</li>
+<li>Programme aufspielen (Liste links auf der Seite, jede Datei per
+Klick ansehbar),</li>
+<li>Probelauf wie in Thonny (Start, Stop, noch einmal Start) mit
+Verbindungsdaten; Zeile ins Protokoll
+<code>kameras_protokoll.csv</code>.</li>
+</ul></li>
+<li>Kamera mit ihrem WLAN-Namen beschriften (<code>VHS-CAM-1</code> …),
+abziehen, nächste Kamera, nächste Nummer. Mitschrift jeder Installation:
+<code>Dozent\protokoll\installation_&lt;Datum&gt;.log</code>;
+Kameraliste <code>Dozent\kameras_protokoll.csv</code>.</li>
+</ol>
+<p>Ohne Browser geht dasselbe auf der Kommandozeile:
+<code>python esp_kurs_kameras_konfigurieren_1.5.py</code> im Ordner
+<code>Dozent\Werkzeuge</code> (fragt nacheinander nach den Kameras).</p>
+<h2
+id="was-auf-jeder-kamera-liegt-in-thonny-im-dateibereich-micropython-gerät-quellen-in-dozentkameraprogramme">Was
+auf jeder Kamera liegt (in Thonny im Dateibereich „MicroPython-Gerät“;
+Quellen in <code>Dozent\Kameraprogramme\</code>)</h2>
+<p>Es gibt <strong>kein <code>main.py</code></strong>: die Kamera
+startet nach dem Einschalten nichts von selbst. Gestartet wird in Thonny
+mit dem grünen Start-Knopf.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Datei</th>
+<th>Quelle</th>
+<th>Zweck</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>kamera.py</code></td>
+<td><code>esp_cam_kamera_1.6.py</code></td>
+<td>eigenes WLAN <code>VHS-CAM-&lt;Nr&gt;</code>, Livebild unter
+<code>http://192.168.4.1/</code>; Ausgabe „AM HANDY EINGEBEN“,
+Verbindungsdaten, Zustand; bei Stop wird die Kamera abgeschaltet</td>
+</tr>
+<tr class="even">
+<td><code>blink.py</code></td>
+<td><code>esp_cam_blink_1.2.py</code></td>
+<td>Beispiel 1: weiße Blitz-LED (GPIO 4) blinkt – nach
+<code>led_blickt.py</code> (die rote LED hängt fest an VCC)</td>
+</tr>
+<tr class="odd">
+<td><code>pwm.py</code></td>
+<td><code>esp_cam_pwm_1.0.py</code></td>
+<td>Beispiel 2: Blitz-LED per PWM heller/dunkler</td>
+</tr>
+<tr class="even">
+<td><code>led_handy.py</code></td>
+<td><code>esp_cam_led_handy_1.1.py</code></td>
+<td>Beispiel 3: weiße LED vom Handy schalten, OLED an IO14/IO15 – nach
+<code>led_blink_Handy.py</code> (ohne Kennwort im Programm)</td>
+</tr>
+<tr class="odd">
+<td><code>ssd1306.py</code></td>
+<td><code>ssd1306.py</code></td>
+<td>OLED-Treiber (micropython-lib, MIT)</td>
+</tr>
+<tr class="even">
+<td><code>kamera.json</code></td>
+<td>wird erzeugt</td>
+<td><code>{"name": "VHS-CAM-&lt;Nr&gt;"}</code></td>
+</tr>
+</tbody>
+</table>
+<p>Alle Bibliotheken, die die Programme importieren
+(<code>asyncio, gc, json, network, time, ubinascii, machine, camera, _thread, usocket</code>),
+stecken in der Firmware – auf dem PC ist dafür nichts zu
+installieren.</p>
+<p>Die Installation endet mit einem <strong>Probelauf wie in
+Thonny</strong>: Start, Stop, Soft-Reboot, noch einmal Start – nur wenn
+beides läuft, meldet die Seite „FERTIG“.</p>
+<h2
+id="für-die-teilnehmer-ordner-teilnehmer-siehe-auch-liesmich_teilnehmer_1.3.md">Für
+die Teilnehmer (Ordner <code>Teilnehmer\</code>, siehe auch
+<code>LIESMICH_Teilnehmer_1.3.md</code>)</h2>
+<ol type="1">
+<li>Einmal <code>Teilnehmer_1_PC_einrichten_1.6.bat</code> doppelklicken
+(Thonny, Pakete, USB-Treiber, Thonny-Einstellung; vorhandenes Thonny
+bleibt).</li>
+<li>Kamera per USB anstecken,
+<code>Teilnehmer_2_Thonny_mit_Kamera_starten_1.4.bat</code>
+doppelklicken: bereitet den Anschluss vor, startet die Kamera per
+Software neu (sie steht nach dem Einstecken sonst im Bootlader) und
+öffnet Thonny mit dem Kameraprogramm.</li>
+<li><strong>Grüner Start-Knopf</strong> → oben „AM HANDY EINGEBEN“
+(WLAN, Kennwort, Adresse), danach Zustandszeilen. <strong>Stop</strong>
+beendet.</li>
+<li>Beispiele: in Thonny <code>blink.py</code>, <code>pwm.py</code>,
+<code>led_handy.py</code> auf der Kamera öffnen und Start drücken.</li>
+</ol>
+<h2 id="warum-nach-dem-einstecken-ein-reset-nötig-ist">Warum nach dem
+Einstecken ein Reset nötig ist</h2>
+<p>Nach dem Einstecken meldet die Kamera in Thonny oft
+<code>boot:0x3 (DOWNLOAD_BOOT …) waiting for download</code> und „Device
+is busy or does not respond“. Das liegt nicht an der Einrichtung,
+sondern an der Elektronik des USB-Bretts ESP32-CAM-MB: Seine
+Steuerleitungen hängen über eine kleine Transistorschaltung an EN
+(Reset) und IO0 (Flash-Modus). Beim Einstecken schaltet Windows diese
+Leitungen kurz; liegt IO0 im Einschaltaugenblick auf 0, bleibt der
+eingebaute Bootlader im Download-Modus – noch bevor irgendein Programm
+läuft. Thonny kann die Leitungen beim Verbinden nur dauerhaft ein- oder
+ausschalten, aber keinen kurzen Reset-Puls geben („ein“ hält die Kamera
+im Reset, „aus“ lässt sie im Download-Modus). Deshalb gilt:</p>
+<p><strong>Nach dem Einstecken einmal neu starten:</strong> entweder
+<code>Teilnehmer_2_Thonny_mit_Kamera_starten_1.4.bat</code> benutzen
+(sie startet die Kamera per Software neu, ohne Taste) oder an der Kamera
+einmal <strong>RST</strong> drücken. Danach meldet sich MicroPython
+(<code>&gt;&gt;&gt;</code>). Die Installationsseite macht diesen
+Neustart ebenfalls selbst. (Gemessen am Dozenten-PC; wie andere PCs die
+Leitungen beim Einstecken schalten, hängt von deren Treiber ab.)</p>
+<h2 id="gut-zu-wissen">Gut zu wissen</h2>
+<ul>
+<li><strong>CH340-Falle:</strong> Öffnet ein Programm den Anschluss nach
+dem Einstecken direkt mit 115200 Baud, meldet Windows „Ein an das System
+angeschlossenes Gerät funktioniert nicht“, und der Wandler bleibt bis
+zum Neustecken gesperrt. Abhilfe: erst mit 9600 Baud öffnen – das machen
+alle Werkzeuge hier selbst (<code>esp_com_vorlauf_1.1.py</code>).</li>
+<li><strong>Kamera hängt</strong> („Failed to capture initial frame“,
+<code>ESP_ERR_NOT_SUPPORTED</code>): USB-Kabel 5 s abziehen und wieder
+anstecken – RST allein hilft dann nicht, weil der Kamerasensor nicht
+stromlos wird. Das Kameraprogramm sagt das selbst an.</li>
+<li><strong>DTR/RTS:</strong> Auf dem USB-Brett halten diese Leitungen
+die Kamera im Reset. Thonny ist deshalb auf
+<code>dtr = False, rts = False</code> eingestellt
+(<code>esp_thonny_einstellen_1.2.py</code>); sonst meldet Thonny „Device
+is busy or does not respond“.</li>
+<li><strong>Thonny hält den Anschluss</strong>, solange es mit der
+Kamera verbunden ist – vor dem Installieren schließen.</li>
+<li>Kennwörter stehen nie in Programmen. Eigenes WLAN mit Kennwort:
+Datei <code>ap.json</code> mit <code>{"kennwort": "xxxxxxxx"}</code>
+(mind. 8 Zeichen) auf die Kamera legen, Heimnetz: <code>wlan.json</code>
+mit <code>{"ssid": "MeinNetz", "kennwort": "xxxxxxxx"}</code> – z. B. in
+Thonny anlegen und speichern.</li>
+<li>Thonny 5 sieht aus wie Thonny 4. Für Rechner ohne Internet legt
+<code>Dozent\Werkzeuge\esp_pakete_holen_1.2.py</code> Thonny 5.0.1 und
+den CH340-Treiber nach <code>Teilnehmer\pakete\</code> (im Repositorium
+nicht enthalten – Fremddateien).</li>
+</ul>
+<p>Überholte Fassungen liegen im Unterordner <code>alt</code>.</p>
+</body>
+</html>
