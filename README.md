@@ -7,10 +7,10 @@ ESP32-Brett (ESP32-WROOM-32, 30 Stifte) wird mit MicroPython betrieben und in **
 ihr Livebild im Browser unter `http://192.168.4.1/`. Dazu drei kleine Beispiele (LED blinkt, PWM, LED vom Handy schalten).
 Gearbeitet wird mit **Thonny**.
 
-Stand 24.11.2026 · Anleitung Fassung 1.9 · Kameraprogramm 1.6 · Installationsseite 1.4 (Kamera) / 1.0 (ESP32-Brett) · gemeinsames Installationsprogramm 1.0 für beide Bretter (läuft nach dem Doppelklick von allein durch) · Beispiel Bewegungsmelder 1.4
+Stand 24.11.2026 · Anleitung Fassung 1.10 · Kameraprogramm 1.6 · Installationsseite 1.4 (Kamera) / 1.0 (ESP32-Brett) · gemeinsames Installationsprogramm für beide Bretter: eine Batch-Datei `ESP32_Start.bat` 1.7 (fragt 1/2/3, bleibt bei Fehlern offen; am 24.11. an beiden Brettern durchgetestet) · Beispiel Bewegungsmelder 1.4
 
-Anleitung als Seite: <https://ralphwystup.github.io/ESP32-CAM-mit-MicroPython-VHS-Kurs/> · als PDF: `LIESMICH_1.9.pdf`,
-für Teilnehmer: `Installation/LIESMICH_Installation_1.1.pdf` (beide Bretter) sowie `Teilnehmer/LIESMICH_Teilnehmer_1.3.pdf` (Kamera, bisheriger Weg).
+Anleitung als Seite: <https://ralphwystup.github.io/ESP32-CAM-mit-MicroPython-VHS-Kurs/> · als PDF: `LIESMICH_1.10.pdf`,
+für Teilnehmer: `Installation/LIESMICH_Installation_1.3.pdf` (beide Bretter) sowie `Teilnehmer/LIESMICH_Teilnehmer_1.3.pdf` (Kamera, bisheriger Weg).
 
 ## Aufbau
 
@@ -22,7 +22,7 @@ für Teilnehmer: `Installation/LIESMICH_Installation_1.1.pdf` (beide Bretter) so
 Auf jede Kamera kommen `kamera.py` (Kameraprogramm), `blink.py`, `pwm.py`, `led_handy.py`, `ssd1306.py` (OLED-Treiber)
 und `kamera.json` (Name). Gestartet wird in Thonny mit dem grünen Start-Knopf; es gibt bewusst kein `main.py`.
 
-| `Installation/` | **das gemeinsame Installationsprogramm für ESP32-CAM und ESP32-Brett, zum Weitergeben:** `ESP32_installieren.bat` (einmal: richtet beim ersten Mal den PC ein – Thonny, Pakete, beide USB-Treiber, ohne Internet –, dann die Seite „Mein ESP32 installieren“: Brett wählen, Name mit dem Windows-Benutzer vorbelegt, Start von selbst; ein fabrikfrisches Brett bekommt die passende MicroPython-Firmware, die Programme und einen Probelauf; WLAN `VHS-ESP-<Name>` bzw. `VHS-CAM-<Name>`), `Thonny_starten.bat` (jedes Mal, merkt sich das Brett), `Programm_testen.bat` (ein Programm ohne Thonny starten, Ausgabe im Fenster, Stop mit Soft-Reboot), Anleitung 1.1; `Werkzeuge/` (Seite 1.2: Brettwahl, Selbststart, Handauswahl des Anschlusses bei mehreren Brettern; Konfigurationen 1.1/1.5, Kamera-Vorlauf, `PC_einrichten/` 1.7, Pakete aus `pakete/wheels`), `Programme/ESP32/`, `Programme/ESP32-CAM/` (mit `bewegung.py`, dem Bewegungsmelder). Am 24.11. am ESP32-Brett und an der ESP32-CAM durchgetestet |
+| `Installation/` | **das gemeinsame Installationsprogramm für ESP32-CAM und ESP32-Brett, zum Weitergeben:** `ESP32_Start.bat` 1.7 (die eine Batch-Datei: fragt sofort 1 = Brett installieren, 2 = Thonny starten, 3 = Programm testen, bleibt bei jedem Fehler offen; Auswahl 1 richtet beim ersten Mal den PC ein – Thonny, Pakete, beide USB-Treiber, ohne Internet –, dann die Seite „Mein ESP32 installieren“: Brett wählen, Name mit dem Windows-Benutzer vorbelegt, Start von selbst; ein fabrikfrisches Brett bekommt die passende MicroPython-Firmware, die Programme und einen Probelauf; WLAN `VHS-ESP-<Name>` bzw. `VHS-CAM-<Name>`), Anleitung 1.3; `Werkzeuge/` (`Thonny_starten.bat` und `Programm_testen.bat`, von der Batch-Datei aufgerufen – Programm ohne Thonny starten, Ausgabe im Fenster, Stop mit Soft-Reboot; Seite 1.2: Brettwahl, Selbststart, Handauswahl des Anschlusses bei mehreren Brettern; Konfigurationen 1.1/1.5, Kamera-Vorlauf, `PC_einrichten/` 1.7, Pakete aus `pakete/wheels`), `Programme/ESP32/`, `Programme/ESP32-CAM/` (mit `bewegung.py`, dem Bewegungsmelder). Am 24.11. am ESP32-Brett und an der ESP32-CAM durchgetestet |
 | `Dozent_ESP32/` | Dozentenfassung für das ESP32-Brett mit Brett-Nummer und Protokoll (`Dozent_ESP32_installieren_1.0.bat`, `Werkzeuge/`, `Programme/`); `esp32_brett_abfragen_1.0.py` fragt ein Brett ab, ohne etwas zu ändern (Chip, Flash, MicroPython?) |
 | `Beispiele/Bewegungsmelder/` | ESP32-CAM als Bewegungsmelder mit Bildübertragung: `esp_cam_bewegung_1.4.py` (kommt als `main.py` auf die Kamera, liefert die Bedienseite selbst aus), `anzeige_bewegung_1.2.html`, Anleitung 1.4, Manuskript (Erkennung mit Formeln, Bilder, Nachrechnung) |
 

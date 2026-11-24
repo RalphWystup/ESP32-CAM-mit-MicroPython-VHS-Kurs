@@ -1,17 +1,31 @@
 # VHS-Kurs „ESP32-CAM und ESP32 mit MicroPython“ – mein Brett installieren
 
 **Volkshochschule · Kurs „ESP32-CAM und ESP32 mit MicroPython“**
-Prof. Dr.-Ing. Ralph Wystup M.Sc. · erstellt mit KI und Agent (Claude Code, Anthropic) · Fassung 1.1 vom 24.11.2026 (1.1: Bewegungsmelder auf der Kamera)
+Prof. Dr.-Ing. Ralph Wystup M.Sc. · erstellt mit KI und Agent (Claude Code, Anthropic) · Fassung 1.3 vom 24.11.2026 (1.3: die Batch-Datei fragt sofort 1/2/3 und bleibt bei jedem Fehler offen; 1.2: eine einzige Batch-Datei ESP32_Start.bat; 1.1: Bewegungsmelder auf der Kamera)
 
 Ein Ordner für beide Bretter: das gewöhnliche **ESP32-Brett** (ESP32-WROOM-32, 30 Stifte, blaue LED) und die **ESP32-CAM**
 (Kamera auf dem USB-Brett). Es braucht kein Internet: Thonny, beide USB-Treiber (CH340 und CP210x), die Python-Pakete und
 beide MicroPython-Firmwares liegen im Ordner.
 
-## Einmal: das Brett installieren
+## Die eine Batch-Datei: `ESP32_Start.bat`
+
+Doppelklick, dann fragt sie:
+
+```
+  1 = Brett installieren    -- beim ersten Mal, und fuer jedes weitere Brett
+  2 = Thonny starten        -- mit dem installierten Brett arbeiten
+  3 = Programm testen       -- ein Programm ohne Thonny 15 Sekunden laufen lassen
+  Auswahl [1]:
+```
+
+Die Eingabetaste allein nimmt die Vorgabe in den eckigen Klammern: **1**, solange noch kein Brett installiert ist, danach **2**.
+Das Fenster bleibt am Ende offen und schließt erst auf Tastendruck – auch wenn etwas schiefgeht, steht die Meldung dann da.
+
+## Einmal: das Brett installieren (Auswahl 1)
 
 1. Diesen Ordner auf den eigenen Rechner kopieren (nicht vom Stick aus starten).
 2. Nur **ein** Brett mit einem USB-**Daten**kabel anstecken. Thonny muss geschlossen sein.
-3. **`ESP32_installieren.bat`** doppelklicken.
+3. `ESP32_Start.bat` doppelklicken, Eingabetaste (Auswahl 1).
    - Beim ersten Mal richtet sie den PC ein: Thonny 5.0.1, die Python-Pakete pyserial und esptool, die USB-Treiber
      (Windows fragt dafür einmal nach Administratorrechten – mit Ja beantworten) und stellt Thonny ein.
    - Dann öffnet sich im Browser die Seite „Mein ESP32 installieren“.
@@ -20,12 +34,12 @@ beide MicroPython-Firmwares liegen im Ordner.
    wer das Brett oder den Namen ändern will, drückt „Abbrechen“, stellt um und drückt „Brett installieren“.
    Ein fabrikfrisches Brett bekommt zuerst MicroPython (etwa 2 Minuten – Kabel nicht berühren), dann die Programme,
    zum Schluss läuft ein Probelauf. Am Ende steht grün **FERTIG** mit dem Namen des WLANs (`VHS-ESP-<Name>` oder `VHS-CAM-<Name>`).
-5. Das schwarze Fenster schließen. Die Brettwahl merkt sich der Ordner (`Werkzeuge\brett.txt`).
+5. Das schwarze Fenster mit einer Taste schließen. Die Brettwahl merkt sich der Ordner (`Werkzeuge\brett.txt`).
 
-## Jedes Mal: mit dem Brett arbeiten
+## Jedes Mal: mit dem Brett arbeiten (Auswahl 2)
 
-**`Thonny_starten.bat`** doppelklicken. Beim ESP32-Brett öffnet Thonny `blink.py`, bei der Kamera bereitet die Datei die Kamera vor
-(sie steht nach dem Einstecken im Download-Modus) und öffnet `kamera.py`. Dann den **grünen Start-Knopf** drücken; **Stop** beendet.
+`ESP32_Start.bat` doppelklicken, Eingabetaste (Auswahl 2). Beim ESP32-Brett öffnet Thonny `blink.py`; bei der Kamera wird sie erst
+vorbereitet (sie steht nach dem Einstecken im Download-Modus), dann öffnet Thonny `kamera.py`. Dann den **grünen Start-Knopf** drücken; **Stop** beendet.
 Andere Programme: in Thonny links im Dateibereich „MicroPython-Gerät“ öffnen.
 
 | Auf dem Brett | ESP32-Brett | ESP32-CAM |
@@ -38,22 +52,23 @@ Andere Programme: in Thonny links im Dateibereich „MicroPython-Gerät“ öffn
 
 Die Programme liegen zum Lesen in `Programme\ESP32\` und `Programme\ESP32-CAM\`.
 
-## Ohne Thonny ausprobieren
+## Ohne Thonny ausprobieren (Auswahl 3)
 
-**`Programm_testen.bat`** zeigt, was auf dem Brett liegt, fragt nach dem Programm und lässt es 15 Sekunden laufen (Ausgabe im Fenster),
-dann stoppt es wie in Thonny. Gut für einen schnellen Funktionstest; Thonny muss dabei geschlossen sein.
+`ESP32_Start.bat`, Auswahl 3: zeigt, was auf dem Brett liegt, fragt nach dem Programm (z. B. `bewegung.py`) und lässt es 15 Sekunden laufen
+(Ausgabe im Fenster), dann stoppt es wie in Thonny. Gut für einen schnellen Funktionstest; Thonny muss dabei geschlossen sein.
 
 ## Wenn etwas nicht geht
 
-- Mehrere Bretter am PC: die Seite zeigt dann eine Auswahl des Anschlusses (sonst wählt sie ihn selbst); `Programm_testen.bat` fragt ebenfalls.
+- Mehrere Bretter am PC: die Seite zeigt dann eine Auswahl des Anschlusses (sonst wählt sie ihn selbst); der Programmtest fragt ebenfalls.
 - „Kein ESP32-Brett gefunden“: ein USB-**Daten**kabel nehmen (manche Kabel laden nur); Kabel ab- und wieder anstecken.
 - „Anschluss ist belegt“: Thonny oder eine andere Seite mit dem Brett schließen, Kabel 5 Sekunden abziehen, noch einmal.
 - Das Flashen klappt nicht automatisch: die Seite sagt dann, wann die Taste BOOT (Brett) bzw. IO0 (Kamera) zu halten ist.
-- Kamera: Thonny meldet „Device is busy“ oder „waiting for download“ – `Thonny_starten.bat` noch einmal (oder RST an der Kamera).
-- Falsches Brett gewählt? Einfach noch einmal `ESP32_installieren.bat` mit der richtigen Wahl – die Firmware wird dann ersetzt.
+- Kamera: Thonny meldet „Device is busy“ oder „waiting for download“ – `ESP32_Start.bat`, Auswahl 2, noch einmal (oder RST an der Kamera).
+- Falsches Brett gewählt? `ESP32_Start.bat`, Auswahl 1, mit der richtigen Wahl – die Firmware wird dann ersetzt.
+- Das Fenster zeigt eine Fehlermeldung: stehen lassen (es schließt erst auf Tastendruck), abfotografieren oder abschreiben und dem Dozenten zeigen.
 
 ## Was in diesem Ordner liegt
 
-Oben nur, was gedrückt wird: `ESP32_installieren.bat` (einmal), `Thonny_starten.bat` (jedes Mal) und `Programm_testen.bat` (Funktionstest ohne Thonny), dazu dieses Liesmich.
-`Werkzeuge\` Installationsseite, die beiden Konfigurationen, Kamera-Vorlauf, `PC_einrichten\` mit `pakete\` (Thonny 5.0.1, Treiber CH340 und CP210x,
+Oben nur die eine Batch-Datei `ESP32_Start.bat` und dieses Liesmich.
+`Werkzeuge\` Installationsseite, die beiden Konfigurationen, Kamera-Vorlauf, `Thonny_starten.bat` und `Programm_testen.bat` (werden von `ESP32_Start.bat` aufgerufen), `PC_einrichten\` mit `pakete\` (Thonny 5.0.1, Treiber CH340 und CP210x,
 Python-Pakete in `wheels\`); `Programme\ESP32\` und `Programme\ESP32-CAM\` mit den Programmen und der jeweiligen Firmware. Es stehen keine Kennwörter darin.

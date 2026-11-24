@@ -175,8 +175,9 @@
 <h1 id="vhs-kurs-esp32-cam-und-esp32-mit-micropython">VHS-Kurs
 „ESP32-CAM und ESP32 mit MicroPython“</h1>
 <p>Prof. Dr.-Ing. Ralph Wystup M.Sc. · Ordner <code>C:\VHS_Kurs</code> ·
-Stand 24.11.2026, Fassung 1.9 der Anleitung (ersetzt LIESMICH_1.8.md;
-1.9: ESP32-WROOM-32-Brett und Beispiel Bewegungsmelder dazu; 1.8:
+Stand 24.11.2026, Fassung 1.10 der Anleitung (ersetzt LIESMICH_1.9.md;
+1.10: Installation mit der einen Batch-Datei ESP32_Start.bat, Auswahl
+1/2/3; 1.9: ESP32-WROOM-32-Brett und Beispiel Bewegungsmelder dazu; 1.8:
 Installationsseite 1.4, Erklärung Download-Modus nach dem
 Einstecken)</p>
 <h2 id="ordner">Ordner</h2>
@@ -408,18 +409,20 @@ Vorlauf), und das eigene WLAN heißt
 <td><code>Installation\</code></td>
 <td><strong>das gemeinsame Installationsprogramm für beide
 Bretter</strong>, zum Weitergeben (auf den eigenen Rechner kopieren):
-<strong><code>ESP32_installieren.bat</code></strong> (einmal – richtet
+<strong><code>ESP32_Start.bat</code></strong> (die eine Batch-Datei,
+fragt sofort: 1 = Brett installieren, 2 = Thonny starten, 3 = Programm
+testen; das Fenster bleibt bei jedem Fehler offen. Auswahl 1 richtet
 beim ersten Mal den PC ein, ohne Internet; dann Seite „Mein ESP32
 installieren“: Brett wählen, Name ist vorbelegt, Start von selbst; ein
 fabrikfrisches Brett bekommt MicroPython, die Programme und einen
-Probelauf), <strong><code>Thonny_starten.bat</code></strong> (jedes Mal,
-merkt sich das Brett), <code>Programm_testen.bat</code> (ein Programm
-ohne Thonny laufen lassen), <code>LIESMICH_Installation_1.1</code>;
-darunter <code>Werkzeuge\</code> (Seite 1.2 mit Brettwahl, Selbststart
-und Handauswahl des Anschlusses, beide Konfigurationen, Kamera-Vorlauf,
-<code>PC_einrichten\</code> mit <code>pakete\</code>),
-<code>Programme\ESP32\</code>, <code>Programme\ESP32-CAM\</code> (dort
-auch <code>bewegung.py</code>)</td>
+Probelauf), <code>LIESMICH_Installation_1.3</code>; darunter
+<code>Werkzeuge\</code> (<code>Thonny_starten.bat</code> und
+<code>Programm_testen.bat</code>, von der Batch-Datei aufgerufen; Seite
+1.2 mit Brettwahl, Selbststart und Handauswahl des Anschlusses, beide
+Konfigurationen, Kamera-Vorlauf, <code>PC_einrichten\</code> mit
+<code>pakete\</code>), <code>Programme\ESP32\</code>,
+<code>Programme\ESP32-CAM\</code> (dort auch
+<code>bewegung.py</code>)</td>
 </tr>
 <tr class="even">
 <td><code>Dozent_ESP32\</code></td>
