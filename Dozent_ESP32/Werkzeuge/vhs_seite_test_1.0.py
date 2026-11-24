@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""vhs_seite_test_1.0.py (24.11.2026) -- auf dem PC, aus C:\\Bruecke: Ende-zu-Ende-Test der gemeinsamen Installationsseite am echten Brett.
-Startet C:\\VHS_Kurs\\VHS_ESP32_Installation\\Werkzeuge\\esp_kurs_installation_1.0.py mit Thonnys Python als Unterprozess, fragt /naechste,
+"""vhs_seite_test_1.1.py (24.11.2026; 1.1: Seite 1.2) -- auf dem PC, aus C:\\Bruecke: Ende-zu-Ende-Test der gemeinsamen Installationsseite am echten Brett.
+Startet C:\\VHS_Kurs\\VHS_ESP32_Installation\\Werkzeuge\\esp_kurs_installation_1.2.py mit Thonnys Python als Unterprozess, fragt /naechste,
 /ports, /dateien ab, stößt POST /start {nummer, brett} an (wie der Knopf bzw. der Selbststart der Seite), wartet auf das Ergebnis und
 beendet den Server. Aufruf: python vhs_seite_test_1.0.py <Name> <esp|cam> [COMx]   -- mit COMx wird die Konfiguration auf diesen Anschluss gezwungen
 (sonst nimmt sie den ersten gefundenen; sein Wort: „an com 5 liegt nun ein board zum testen“).
@@ -12,7 +12,7 @@ name, brett = sys.argv[1], sys.argv[2]; port = sys.argv[3] if len(sys.argv) > 3 
 PY = None
 for d in (os.path.join(os.environ.get("LOCALAPPDATA", ""), "Programs", "Thonny"), r"C:\Program Files\Thonny"):
     if os.path.isfile(os.path.join(d, "python.exe")): PY = os.path.join(d, "python.exe"); break
-SEITE = r"C:\VHS_Kurs\VHS_ESP32_Installation\Werkzeuge\esp_kurs_installation_1.0.py"
+SEITE = r"C:\VHS_Kurs\VHS_ESP32_Installation\Werkzeuge\esp_kurs_installation_1.2.py"
 args = [PY, "-u", SEITE] + (["--port", port] if port else [])   # --port wird von den Konfigurationen aus sys.argv gelesen (PORT_VORGABE)
 srv = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace", cwd=os.path.dirname(SEITE))
 def hole(pfad, daten=None):

@@ -2,11 +2,14 @@
 # -*- coding: utf-8 -*-
 # ==========================================================================================================
 #  VHS-Kurs  „ESP32 mit MicroPython“
-#  Gemeinsame Installationsseite für ESP32-CAM und ESP32-WROOM-32  (esp_kurs_installation_1.0.py)
+#  Gemeinsame Installationsseite für ESP32-CAM und ESP32-WROOM-32  (esp_kurs_installation_1.2.py)
 # ----------------------------------------------------------------------------------------------------------
 #  Autor:      Prof. Dr.-Ing. Ralph Wystup M.Sc.
 #  Mitarbeit:  Claude (Anthropic, Claude Code)
-#  Fassung:    1.0 vom 24.11.2026 -- gemeinsames Installationsprogramm (sein Wort: „nur das gemeinsame instalationsprogramm rein“): auf der Seite
+#  Fassung:    1.2 vom 24.11.2026 -- Handauswahl des Anschlusses als Rückfall (sein Wort: „sonst eine Handauswahl einführen?“): bei genau einem
+#              Brett automatisch wie bisher, bei mehreren erscheint eine Auswahl, der gewählte Anschluss geht als Vorgabe an die Konfiguration.
+#              1.1: Kamera bekommt zusätzlich bewegung.py (Bewegungsmelder mit Bildübertragung 1.4; sein Wort: „Testprogramm wäre
+#              ja hier die Bewegungserkennung und übertragung“).  1.0: gemeinsames Installationsprogramm (sein Wort: „nur das gemeinsame instalationsprogramm rein“): auf der Seite
 #              wird das Brett gewählt (ESP32-Brett oder ESP32-CAM), darunter arbeiten die beiden geprüften Konfigurationen unverändert
 #              (esp_kurs_esp32_konfigurieren_1.1.py, esp_kurs_kameras_konfigurieren_1.5.py); die Wahl steht in Werkzeuge\brett.txt für Thonny_starten.bat.
 #              Aus esp_kurs_esp32_installieren_1.2.py; dort sein Wort: „alles so einrichten dass alles nach drücken der start batt von alleine läuft“: Name mit dem
@@ -37,6 +40,7 @@ OBEN = os.path.dirname(HIER)
 KK_ESP = lade_modul("kk_esp", "esp_kurs_esp32_konfigurieren_1.1.py"); KK_CAM = lade_modul("kk_cam", "esp_kurs_kameras_konfigurieren_1.5.py")
 KK_ESP.PROGRAMME = os.path.join(OBEN, "Programme", "ESP32"); KK_ESP.FW = os.path.join(KK_ESP.PROGRAMME, "ESP32_GENERIC-20251209-v1.27.0.bin"); KK_ESP.PROTOKOLL = os.path.join(OBEN, "esp32_protokoll.csv")
 KK_CAM.PROGRAMME = os.path.join(OBEN, "Programme", "ESP32-CAM"); KK_CAM.FW = os.path.join(KK_CAM.PROGRAMME, "firmware.bin"); KK_CAM.PROTOKOLL = os.path.join(OBEN, "kameras_protokoll.csv")
+KK_CAM.DATEIEN = KK_CAM.DATEIEN + [("esp_cam_bewegung_1.4.py", "bewegung.py")]   # 1.1: Bewegungsmelder dazu (Start in Thonny, kein main.py)
 BRETTER = {"esp": KK_ESP, "cam": KK_CAM}; BRETT_DATEI = os.path.join(HIER, "brett.txt")
 def brett_lesen():
     try: b = open(BRETT_DATEI, encoding="utf-8").read().strip()
@@ -50,7 +54,7 @@ ZWECK = {"esp": {"blink.py": "Beispiel 1: blaue LED (GPIO 2) blinkt", "pwm.py": 
                  "esp.json": "Name des Bretts = Name seines WLANs"},
          "cam": {"kamera.py": "Kameraprogramm: in Thonny Start drücken; eigenes WLAN, Livebild im Browser", "blink.py": "Beispiel 1: weiße Blitz-LED blinkt",
                  "pwm.py": "Beispiel 2: Blitz-LED per PWM heller/dunkler", "led_handy.py": "Beispiel 3: LED vom Handy aus schalten (mit OLED an IO14/15)",
-                 "ssd1306.py": "Treiber für das OLED-Display (micropython-lib)", "kamera.json": "Name der Kamera = Name ihres WLANs"}}
+                 "ssd1306.py": "Treiber für das OLED-Display (micropython-lib)", "bewegung.py": "Bewegungsmelder mit Bildübertragung: Kamera liefert ihre Bedienseite selbst (http://192.168.4.1/), LED blitzt, wenn das Foto angekommen ist", "kamera.json": "Name der Kamera = Name ihres WLANs"}}
 Z = {"laeuft": False, "nummer": None, "brett": "esp", "zeilen": [], "frage": None, "ergebnis": None, "beginn": None, "fortschritt": None}
 SPERRE = threading.Lock(); ANTWORT = threading.Event(); ANTWORT_TEXT = [""]
 
@@ -88,8 +92,8 @@ def fortschritt(art, prozent, text=""):
 for _m in BRETTER.values(): _m.print = melde; _m.input = frage; _m.FRAGEN = True; _m.fortschritt = fortschritt
 
 
-def installieren(nummer, brett):
-    KK = BRETTER[brett]
+def installieren(nummer, brett, port=None):
+    KK = BRETTER[brett]; KK.PORT_VORGABE = port or None   # 1.2: Handauswahl bei mehreren Brettern
     with SPERRE: Z.update(laeuft=True, nummer=nummer, brett=brett, ergebnis=None, beginn=time.time(), fortschritt=None); Z["zeilen"].clear()
     try: open(BRETT_DATEI, "w", encoding="utf-8").write(brett)   # Thonny_starten.bat liest die Wahl
     except OSError: pass
@@ -127,13 +131,13 @@ input{font-size:16px;width:70px;padding:6px}#log{background:#fafafa;border:1px s
 #fbox{margin:6px 0 10px}#ftext{font-size:14px;margin-bottom:3px;min-height:1.2em}#fbalken{border:1px solid #000;height:18px;background:#fff}#fwert{height:100%;width:0;background:#000;transition:width .3s}
 .ok{color:#060}.schlecht{color:#a00}#ansicht{white-space:pre;font:12px Consolas,monospace;border:1px solid #bbb;max-height:300px;overflow:auto;padding:6px;display:none}
 </style></head><body>
-<h1>Mein ESP32 installieren</h1><div class="unter">VHS-Kurs „ESP32-CAM und ESP32 mit MicroPython“ &middot; Prof. Dr.-Ing. Ralph Wystup M.Sc. &middot; erstellt mit KI und Agent (Claude Code, Anthropic) &middot; Installationsseite 1.0</div>
+<h1>Mein ESP32 installieren</h1><div class="unter">VHS-Kurs „ESP32-CAM und ESP32 mit MicroPython“ &middot; Prof. Dr.-Ing. Ralph Wystup M.Sc. &middot; erstellt mit KI und Agent (Claude Code, Anthropic) &middot; Installationsseite 1.2</div>
 <p style="font-size:16px"><b>Welches Brett?</b> <label><input type="radio" name="brett" value="esp" id="b_esp"> ESP32-Brett (WROOM-32, 30 Stifte, blaue LED)</label> &nbsp; <label><input type="radio" name="brett" value="cam" id="b_cam"> ESP32-CAM (Kamera auf dem USB-Brett)</label></p>
 <div class="reihe"><div class="spalte">
 <h3>Das kommt auf das Brett</h3><table id="dateien"><tr><th>Datei auf dem Brett</th><th>Fassung</th><th>Zweck</th><th>Byte</th></tr></table>
 <p id="fwtext">Dazu, falls das Brett werksfrisch ist: die passende MicroPython-Firmware 1.27 (ESP32-Brett: ESP32_GENERIC von micropython.org; ESP32-CAM: mit Kameratreiber). Ein vorhandenes <b>main.py</b> wird entfernt – gestartet wird in Thonny.</p>
 <div id="ansicht"></div>
-<h3>Angeschlossen</h3><div id="ports">…</div>
+<h3>Angeschlossen</h3><div id="ports">…</div><div id="portwahl" style="display:none;margin-top:6px">Mehrere Bretter – <b>welches?</b> <select id="port"></select></div>
 </div><div class="spalte">
 <h3>Installieren</h3>
 <p>Nur <b>ein</b> ESP32-Brett per USB anstecken. Thonny muss geschlossen sein.</p>
@@ -156,8 +160,12 @@ function brett(){return $('b_cam').checked?'cam':'esp';}
 async function liste(){const d=await (await fetch('/dateien?brett='+brett())).json();while($('dateien').rows.length>1)$('dateien').deleteRow(1);for(const f of d){const r=$('dateien').insertRow();
  r.innerHTML=`<td>${f.quelle.startsWith('(')?f.ziel:`<a href="#" onclick="zeige('${f.quelle}');return false">${f.ziel}</a>`}</td><td>${f.fassung}</td><td>${f.zweck}</td><td>${f.byte||''}</td>`;}}
 async function zeige(q){const t=await (await fetch('/datei?name='+encodeURIComponent(q))).text();$('ansicht').style.display='block';$('ansicht').textContent=t;}
-async function ports(){const d=await (await fetch('/ports')).json();$('ports').innerHTML=d.length?d.map(p=>`${p.port} – ${p.text}${p.kamera?' <b>(ESP32)</b>':''}`).join('<br>'):'kein ESP32-Brett gefunden';}
-$('los').onclick=async()=>{gestartet=true;$('auto').textContent='';const n=saeubern($('nummer').value);if(!n){$('ergebnis').textContent='Bitte zuerst den Namen eintragen.';$('ergebnis').className='schlecht';return;}await fetch('/start',{method:'POST',body:JSON.stringify({nummer:n,brett:brett()})});};
+let bretter=[];
+async function ports(){const d=await (await fetch('/ports')).json();$('ports').innerHTML=d.length?d.map(p=>`${p.port} – ${p.text}${p.kamera?' <b>(ESP32)</b>':''}`).join('<br>'):'kein ESP32-Brett gefunden';
+ const b=d.filter(p=>p.kamera).map(p=>p.port);if(b.join()!==bretter.join()){bretter=b;const s=$('port');s.innerHTML=b.map(p=>`<option value="${p}">${p}</option>`).join('');}
+ $('portwahl').style.display=b.length>1?'block':'none';}
+function gewaehlterPort(){return bretter.length>1?$('port').value:'';}
+$('los').onclick=async()=>{gestartet=true;$('auto').textContent='';const n=saeubern($('nummer').value);if(!n){$('ergebnis').textContent='Bitte zuerst den Namen eintragen.';$('ergebnis').className='schlecht';return;}await fetch('/start',{method:'POST',body:JSON.stringify({nummer:n,brett:brett(),port:gewaehlterPort()})});};
 async function antworte(t){await fetch('/antwort',{method:'POST',body:JSON.stringify({text:t})});}
 async function zustand(){try{const z=await (await fetch('/zustand')).json();
  const log=$('log'),unten=log.scrollTop+log.clientHeight>=log.scrollHeight-5;log.textContent=z.zeilen.join('\\n');if(unten)log.scrollTop=log.scrollHeight;
@@ -169,7 +177,7 @@ async function zustand(){try{const z=await (await fetch('/zustand')).json();
 async function naechste(){const d=await (await fetch('/naechste')).json();}
 let auto=null,autoRest=0,gestartet=false;
 async function vorbelegen(){const d=await (await fetch('/naechste')).json();$(d.brett==='cam'?'b_cam':'b_esp').checked=true;if(d.name&&!$('nummer').value){$('nummer').value=d.name;}$('wlan').textContent=praefix()+(saeubern($('nummer').value)||'…');liste();}
-async function selbststart(){if(gestartet)return;const d=await (await fetch('/ports')).json();const b=d.filter(p=>p.kamera);const n=saeubern($('nummer').value);if(b.length!==1||!n){$('auto').textContent=b.length===0?'Warte auf ein Brett am USB … (die Installation startet dann von selbst)':b.length>1?'Mehrere Bretter angeschlossen – bitte nur eines anstecken.':'Bitte den Namen eintragen.';autoRest=0;return;}
+async function selbststart(){if(gestartet)return;const d=await (await fetch('/ports')).json();const b=d.filter(p=>p.kamera);const n=saeubern($('nummer').value);if(b.length!==1||!n){$('auto').textContent=b.length===0?'Warte auf ein Brett am USB … (die Installation startet dann von selbst)':b.length>1?'Mehrere Bretter angeschlossen – links den Anschluss wählen und „Brett installieren“ drücken (oder nur eines anstecken).':'Bitte den Namen eintragen.';autoRest=0;return;}
  if(autoRest===0)autoRest=10;autoRest--; $('auto').innerHTML=`Brett an ${b[0].port} gefunden – Installation startet in <b>${autoRest+1} s</b> von selbst (${brett()==='cam'?'ESP32-CAM':'ESP32-Brett'}, WLAN ${praefix()}${n}) – falsches Brett? Oben umschalten. <button onclick="abbrechen()">Abbrechen</button>`; if(autoRest<=0){gestartet=true;$('auto').textContent='';$('los').click();}}
 function abbrechen(){gestartet=true;$('auto').textContent='Selbststart abgebrochen – „Brett installieren“ drücken, wenn es losgehen soll.';}
 $('nummer').addEventListener('input',()=>{autoRest=0;});
@@ -208,7 +216,8 @@ class Seite(BaseHTTPRequestHandler):
         if self.path == "/start":
             with SPERRE: belegt = Z["laeuft"]
             if belegt: return self._aus(409, json.dumps({"fehler": "läuft schon"}))
-            threading.Thread(target=installieren, args=(KK_ESP.kennung_saeubern(d.get("nummer") or "1"), "cam" if d.get("brett") == "cam" else "esp"), daemon=True).start(); return self._aus(200, "{}")
+            port = str(d.get("port") or "").strip().upper(); port = port if re.fullmatch(r"COM\d{1,3}", port) else None
+            threading.Thread(target=installieren, args=(KK_ESP.kennung_saeubern(d.get("nummer") or "1"), "cam" if d.get("brett") == "cam" else "esp", port), daemon=True).start(); return self._aus(200, "{}")
         if self.path == "/antwort":
             ANTWORT_TEXT[0] = str(d.get("text", "")); ANTWORT.set(); return self._aus(200, "{}")
         self._aus(404, "{}")
@@ -216,7 +225,7 @@ class Seite(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     srv = ThreadingHTTPServer(("127.0.0.1", PORT), Seite)
-    print("=" * 64 + f"\n VHS-Kurs ESP32-CAM und ESP32  ·  Installationsseite 1.0\n Prof. Dr.-Ing. Ralph Wystup M.Sc.\n" + "=" * 64)
+    print("=" * 64 + f"\n VHS-Kurs ESP32-CAM und ESP32  ·  Installationsseite 1.2\n Prof. Dr.-Ing. Ralph Wystup M.Sc.\n" + "=" * 64)
     print(f" Seite: http://127.0.0.1:{PORT}/      Protokoll: {LOG}\n Dieses Fenster offen lassen; schließen beendet die Installationsseite.", flush=True)
     threading.Timer(1.0, lambda: webbrowser.open(f"http://127.0.0.1:{PORT}/")).start()
     try:
