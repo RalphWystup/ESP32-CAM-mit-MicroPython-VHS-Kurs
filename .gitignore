@@ -6,3 +6,6 @@ protokoll/
 kameras_protokoll.csv
 ap.json
 wlan.json
+ESP32_GENERIC-*.bin
+esp32_protokoll.csv
+esp.json
