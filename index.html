@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <title>ESP32-CAM mit MicroPython – VHS-Kurs</title>
+  <title>ESP32-CAM und ESP32 mit MicroPython – VHS-Kurs</title>
   <style>
     html {
       color: #1a1a1a;
@@ -167,19 +167,16 @@
     }
     .display.math{display: block; text-align: center; margin: 0.5rem auto;}
   </style>
-  <style>
-  body{font-family:"Segoe UI",Arial,sans-serif;max-width:60rem;margin:0 auto;padding:1.2rem 1rem;color:#000;background:#fff;line-height:1.45}
-  h1{font-size:1.6rem}h2{font-size:1.25rem;margin-top:1.6rem;border-bottom:1px solid #ccc}table{border-collapse:collapse;width:100%;font-size:.92rem}
-  th,td{border-bottom:1px solid #ddd;padding:.3rem .4rem;text-align:left;vertical-align:top}code{font-size:.88em;background:#f4f4f4;padding:0 .2em}
-  pre{background:#f4f4f4;padding:.6rem;overflow-x:auto}.oben{background:#f4f4f4;border:1px solid #ccc;padding:.6rem .8rem;margin-bottom:1rem}
-  </style>
 </head>
 <body>
-<div class="oben"><b>Prof. Dr.-Ing. Ralph Wystup M.Sc. — erstellt mit KI und Agent (Claude Code, Anthropic)</b><br>Anleitung als PDF: <a href="LIESMICH_1.8.pdf">LIESMICH_1.8.pdf</a> · für Teilnehmer: <a href="Teilnehmer/LIESMICH_Teilnehmer_1.3.pdf">LIESMICH_Teilnehmer_1.3.pdf</a> · Quelltexte und Werkzeuge: <a href="https://github.com/RalphWystup/ESP32-CAM-mit-MicroPython-VHS-Kurs">Repositorium</a></div>
-<h1 id="vhs-kurs-esp32-cam-mit-micropython">VHS-Kurs „ESP32-CAM mit
-MicroPython“</h1>
+<header id="title-block-header">
+<h1 class="title">ESP32-CAM und ESP32 mit MicroPython – VHS-Kurs</h1>
+</header>
+<h1 id="vhs-kurs-esp32-cam-und-esp32-mit-micropython">VHS-Kurs
+„ESP32-CAM und ESP32 mit MicroPython“</h1>
 <p>Prof. Dr.-Ing. Ralph Wystup M.Sc. · Ordner <code>C:\VHS_Kurs</code> ·
-Stand 17.11.2026, Fassung 1.8 der Anleitung (ersetzt LIESMICH_1.7.md;
+Stand 24.11.2026, Fassung 1.9 der Anleitung (ersetzt LIESMICH_1.8.md;
+1.9: ESP32-WROOM-32-Brett und Beispiel Bewegungsmelder dazu; 1.8:
 Installationsseite 1.4, Erklärung Download-Modus nach dem
 Einstecken)</p>
 <h2 id="ordner">Ordner</h2>
@@ -385,5 +382,69 @@ den CH340-Treiber nach <code>Teilnehmer\pakete\</code> (im Repositorium
 nicht enthalten – Fremddateien).</li>
 </ul>
 <p>Überholte Fassungen liegen im Unterordner <code>alt</code>.</p>
+<h2 id="das-esp32-brett-esp32-wroom-32-30-stifte-seit-24.11.2026">Das
+ESP32-Brett (ESP32-WROOM-32, 30 Stifte) – seit 24.11.2026</h2>
+<p>Derselbe Kurs läuft auch mit dem gewöhnlichen ESP32-Brett ohne
+Kamera. Die Werkzeuge sind aus denen der Kamera abgeleitet, der Ablauf
+ist derselbe; Unterschiede: Firmware MicroPython 1.27.0
+<code>ESP32_GENERIC</code> von micropython.org (ohne Kameratreiber), die
+blaue LED an GPIO 2 statt der Blitz-LED, das OLED an GPIO 22/21, das
+Brett startet nach dem Einstecken von selbst (kein Download-Modus, kein
+Vorlauf), und das eigene WLAN heißt
+<code>VHS-ESP-&lt;Name&gt;</code>.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Ordner</th>
+<th>Inhalt</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>Installation\</code></td>
+<td><strong>das gemeinsame Installationsprogramm für beide
+Bretter</strong>, zum Weitergeben (auf den eigenen Rechner kopieren):
+<strong><code>ESP32_installieren.bat</code></strong> (einmal – richtet
+beim ersten Mal den PC ein, ohne Internet; dann Seite „Mein ESP32
+installieren“: Brett wählen, Name ist vorbelegt, Start von selbst; ein
+fabrikfrisches Brett bekommt MicroPython, die Programme und einen
+Probelauf), <strong><code>Thonny_starten.bat</code></strong> (jedes Mal,
+merkt sich das Brett), <code>LIESMICH_Installation_1.0</code>; darunter
+<code>Werkzeuge\</code> (Seite, beide Konfigurationen, Kamera-Vorlauf,
+<code>PC_einrichten\</code> mit <code>pakete\</code>),
+<code>Programme\ESP32\</code>, <code>Programme\ESP32-CAM\</code></td>
+</tr>
+<tr class="even">
+<td><code>Dozent_ESP32\</code></td>
+<td><code>Dozent_ESP32_installieren_1.0.bat</code> – Installationsseite
+mit Brett-Nummer (<code>VHS-ESP-1</code>, <code>-2</code>, …) und
+Protokoll <code>esp32_protokoll.csv</code>; <code>Werkzeuge\</code>,
+<code>Programme\</code> (blink, pwm, led_handy, ssd1306, Firmware)</td>
+</tr>
+</tbody>
+</table>
+<p>Auf jedes Brett kommen <code>blink.py</code>, <code>pwm.py</code>,
+<code>led_handy.py</code>, <code>ssd1306.py</code> und
+<code>esp.json</code> (Name); gestartet wird in Thonny, es gibt kein
+<code>main.py</code>. Achtung im Kursraum: Das Dozentenwerkzeug nimmt
+den ersten gefundenen USB-Anschluss – nur ein Brett zugleich anstecken
+(am 24.11. wurde so versehentlich ein fremder ESP32 geflasht).</p>
+<h2
+id="beispiel-bewegungsmelder-mit-bildübertragung-esp32-cam-beispielebewegungsmelder">Beispiel:
+Bewegungsmelder mit Bildübertragung (ESP32-CAM) –
+<code>Beispiele\Bewegungsmelder\</code></h2>
+<p><code>esp_cam_bewegung_1.4.py</code> kommt als <code>main.py</code>
+auf die Kamera: Sie spannt ihr WLAN auf, beobachtet ihr Bildfeld, legt
+bei Bewegung das Foto zum Abholen bereit und liefert die Bedienseite
+selbst aus (<code>http://192.168.4.1/</code>); die weiße LED blitzt
+erst, wenn das Foto auf der Seite angekommen ist. Dazu
+<code>anzeige_bewegung_1.2.html</code> (die Seite als Datei),
+<code>LIESMICH_Bewegungsmelder_1.4</code> und das Manuskript (Erkennung
+mit Formeln, Einstellungen, Übertragung, Selbsthilfe) im Unterordner
+<code>manuskript\</code>.</p>
 </body>
 </html>

@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ESP32-CAM Bewegungsmelder – Anzeige 1.2</title>
+<!--
+  VHS-Kurs „ESP32-CAM mit MicroPython“ · Anzeige- und Steuerseite zum Bewegungsmelder (Kameraprogramm esp_cam_bewegung_1.4.py, auf der Kamera als main.py)
+  Autor: Prof. Dr.-Ing. Ralph Wystup M.Sc. · Mitarbeit: Claude (Anthropic, Claude Code) · Fassung 1.2 vom 20.11.2026 (1.1 und 1.0 vom 20./18.11.2026)
+  1. Adresse der Kamera: über USB (Web Serial, Chrome/Edge) aus der Zeile „KAMERA-URL http://…/“; geht das nicht,
+     bleibt die Vorgabe http://192.168.4.1/ (eigenes WLAN der Kamera).
+  2. Bilder über WLAN: alle 0,7 s /ereignis fragen; neue Nummer -> /letztes.jpg holen, groß zeigen, in die Galerie.
+  3. Wahlweise Speicherordner: jedes Bild wird dort als bewegung_<Datum>_<Zeit>_nr<N>.jpg abgelegt.
+  4. (1.1, sein Wort 20.11.2026 „das soll alles über die html gesteuert werden“) Kamera steuern: Wächter an/aus, Foto jetzt,
+     LED-Test, Schwelle/Anteil/Ruhe/Blitz übertragen (/steuern, /foto, /blitz); Zustand der Kamera alle 3 s aus /status.
+  6. (1.2, sein Befund 20.11.2026 „led blitzt aber ich sehe keine bilder!“): Bild bis 20 s abwarten (vorher 3 s); die
+     Nummer gilt erst als empfangen, wenn das Bild da ist (sonst nächster Versuch); Fehlergrund wird angezeigt; nach dem
+     Anzeigen meldet die Seite /gesehen?nr=N -- erst dann blitzt die LED. „Keine Antwort“ und gesperrte Knöpfe erst nach
+     3 Fehlversuchen hintereinander; Abfragen bis 4 s, Bild bis 20 s, Befehl bis 15 s. Nach einem Abbruch fragt die Seite ohne
+     Ende weiter (automatischer Neuaufbau, sein Wort „die verbindung muss auch immer wieder bei abbruch automatisch aufgebaut
+     werden!“) und holt verpasste Bilder nach.
+  5. (1.1) Die Kamera liefert diese Datei selbst aus (anzeige.html im Flash, http://192.168.4.1/): dann gilt ihre eigene Adresse,
+     der Empfang startet sofort; USB und Ordnerwahl erlaubt der Browser dort nicht -- Bilder einzeln herunterladen.
+-->
+<style>
+  :root { --rand:#b8b8b8; --grau:#555; --gut:#0a6b2c; --schlecht:#a4161a; --blitz:#f4c400; }
+  * { box-sizing:border-box; }
+  [hidden] { display:none !important; }
+  html, body { height:100%; margin:0; }
+  body { font-family:system-ui, "Segoe UI", sans-serif; font-size:14px; background:#fff; color:#000;
+         display:grid; grid-template-columns:minmax(16rem, 20rem) 1fr minmax(16rem, 20rem); gap:1rem; padding:1rem; overflow:hidden; }
+  aside { display:flex; flex-direction:column; gap:.55rem; min-height:0; overflow:auto; }
+  h1 { font-size:1.15rem; margin:0; }
+  .klein { font-size:.8rem; color:var(--grau); }
+  fieldset { border:1px solid var(--rand); border-radius:6px; padding:.35rem .7rem .55rem; margin:0; }
+  legend { font-weight:600; padding:0 .3rem; }
+  button { font:inherit; padding:.35rem .7rem; border:1px solid #444; border-radius:5px; background:#f2f2f2; cursor:pointer; }
+  button:hover { background:#e4e4e4; }
+  button:disabled { color:#888; cursor:not-allowed; }
+  input[type=text] { font:inherit; width:100%; padding:.3rem .4rem; border:1px solid #888; border-radius:4px; }
+  input[type=number] { font:inherit; width:5.2rem; padding:.2rem .3rem; border:1px solid #888; border-radius:4px; }
+  .einst { display:grid; grid-template-columns:1fr auto; gap:.25rem .5rem; align-items:center; margin-top:.35rem; }
+  .zeile { display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; margin-top:.35rem; }
+  .zustand { display:inline-block; min-width:12.5rem; font-weight:600; }
+  .gut { color:var(--gut); } .schlecht { color:var(--schlecht); } .grau { color:var(--grau); }
+  #protokoll { font:12px/1.35 Consolas, monospace; height:4.6rem; overflow:auto; background:#f7f7f7; border:1px solid #ddd;
+               padding:.3rem; white-space:pre-wrap; margin-top:.4rem; }
+  table { border-collapse:collapse; width:100%; }
+  td { padding:.12rem 0; } td:last-child { text-align:right; font-variant-numeric:tabular-nums; min-width:6rem; }
+  main { display:grid; grid-template-rows:auto 1fr auto; gap:.6rem; min-height:0; min-width:0; }
+  #kopf { display:flex; gap:1rem; align-items:baseline; flex-wrap:wrap; }
+  #kopf b { font-size:1.1rem; }
+  #rahmen { position:relative; min-height:0; border:3px solid var(--rand); border-radius:6px; background:#fafafa;
+            display:flex; align-items:center; justify-content:center; overflow:hidden; transition:border-color .5s; }
+  #rahmen.neu { border-color:var(--blitz); transition:none; }
+  #gross { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; display:block; }
+  #leer { color:var(--grau); text-align:center; padding:1rem; }
+  #galerie { display:flex; gap:.4rem; overflow-x:auto; min-height:6.9rem; padding-bottom:.2rem; }
+  #galerie figure { margin:0; flex:0 0 auto; text-align:center; cursor:pointer; }
+  #galerie img { height:5.2rem; width:auto; aspect-ratio:4/3; object-fit:cover; border:2px solid var(--rand); border-radius:4px; display:block; }
+  #galerie figure.aktiv img { border-color:#000; }
+  #galerie figcaption { font-size:.72rem; color:var(--grau); }
+</style>
+</head>
+<body>
+<aside>
+  <div>
+    <h1>ESP32-CAM Bewegungsmelder</h1>
+    <div class="klein">Anzeige 1.2 · VHS-Kurs · Prof. Dr.-Ing. Ralph Wystup M.Sc.</div>
+  </div>
+
+  <fieldset>
+    <legend>1 · Adresse über USB</legend>
+    <div class="zeile"><button id="usb">Kamera über USB verbinden</button></div>
+    <div class="zeile"><span id="usbZustand" class="zustand grau">nicht verbunden</span></div>
+    <div id="protokoll" aria-label="Ausgabe der Kamera"></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>2 · Bilder über WLAN</legend>
+    <label for="adresse" class="klein">Adresse der Kamera (WLAN der Kamera am PC verbinden)</label>
+    <input id="adresse" type="text" value="http://192.168.4.1/" spellcheck="false">
+    <div class="zeile"><button id="start">Empfang starten</button><button id="halt" disabled>Anhalten</button></div>
+    <div class="zeile"><span id="wlanZustand" class="zustand grau">Empfang aus</span></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>3 · Bilder speichern (wahlweise)</legend>
+    <div class="zeile"><button id="ordner">Speicherordner wählen</button></div>
+    <div class="zeile"><span id="ordnerZustand" class="zustand grau">kein Ordner – Bilder nur hier</span></div>
+    <div class="zeile"><button id="bildLaden" disabled title="Noch kein Bild angezeigt.">angezeigtes Bild herunterladen</button></div>
+  </fieldset>
+
+</aside>
+
+<main>
+  <div id="kopf"><b id="titel">Noch keine Bewegung</b><span id="unter" class="klein"></span></div>
+  <div id="rahmen"><img id="gross" alt="letztes Bewegungsbild" hidden><div id="leer">Hier erscheint jedes Bild, sobald die Kamera eine Bewegung erkennt.<br>
+    Ablauf: 1. Kamera einschalten (Programm startet von selbst) · 2. am PC das WLAN der Kamera wählen · 3. „Empfang starten“.</div></div>
+  <div id="galerie" aria-label="bisherige Bewegungsbilder"></div>
+</main>
+
+<aside id="rechts">
+  <fieldset>
+    <legend>Kamera steuern</legend>
+    <div class="zeile"><span id="wacheZustand" class="zustand grau">Wächter: ?</span></div>
+    <div class="zeile"><button id="wacheAn">Wächter an</button><button id="wacheAus">Wächter aus</button></div>
+    <div class="zeile"><button id="fotoJetzt">Foto jetzt</button><button id="ledTest">LED-Test</button></div>
+    <div class="einst">
+      <label for="eSchwelle">Schwelle [Graustufen 5…100]</label><input id="eSchwelle" type="number" min="5" max="100" step="1">
+      <label for="eAnteil">Anteil [% 0,5…50]</label><input id="eAnteil" type="number" min="0.5" max="50" step="0.5">
+      <label for="eRuhe">Ruhe [s 1…60]</label><input id="eRuhe" type="number" min="1" max="60" step="0.5">
+      <label for="eBlitz">Blitz [ms 20…1000]</label><input id="eBlitz" type="number" min="20" max="1000" step="10">
+    </div>
+    <div class="zeile"><button id="einstellen">Einstellungen übertragen</button></div>
+    <div class="zeile"><span id="steuerZustand" class="klein grau">erst „Empfang starten“</span></div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Zähler</legend>
+    <table>
+      <tr><td>Bewegungen empfangen</td><td id="zEmpf">0</td></tr>
+      <tr><td>letzte Bewegung</td><td id="zZeit">–</td></tr>
+      <tr><td>Bildgröße</td><td id="zByte">–</td></tr>
+      <tr><td>Übertragungsdauer</td><td id="zDauer">–</td></tr>
+      <tr><td>veränderte Punkte</td><td id="zAnteil">–</td></tr>
+      <tr><td>Nummer in der Kamera</td><td id="zNr">–</td></tr>
+      <tr><td>Prüfbilder der Kamera</td><td id="zPruef">–</td></tr>
+      <tr><td>Bildfehler der Kamera</td><td id="zFehler">–</td></tr>
+      <tr><td>freier Speicher</td><td id="zFrei">–</td></tr>
+      <tr><td>Kamera läuft seit</td><td id="zLauf">–</td></tr>
+    </table>
+  </fieldset>
+</aside>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const MAX_GALERIE = 40, TAKT_MS = 700, ZEITLIMIT_MS = 4000, BILD_FRIST_MS = 20000;   // 1.2: Bild bis 20 s
+let port = null, leser = null, abfrage = null, letzteNr = null, empfangen = 0, ordner = null, anzeigeUrl = null, bildFehler = false, fehlFragen = 0, fehlZustand = 0;   // 1.2: erst nach 3 Fehlversuchen hintereinander „keine Antwort“
+let zustandTakt = null, kameraDa = false, felderGesetzt = false, befehlLaeuft = false, anzeigeName = null;
+const VON_KAMERA = location.protocol === "http:" || location.protocol === "https:";   // Seite kommt von der Kamera selbst
+
+function zustand(el, text, art) { el.textContent = text; el.className = "zustand " + art; }
+function protokoll(text) {
+  const p = $("protokoll"); p.textContent += text + "\n";
+  if (p.textContent.length > 6000) p.textContent = p.textContent.slice(-4000);
+  p.scrollTop = p.scrollHeight;
+}
+function adresse() {
+  let a = $("adresse").value.trim();
+  if (!/^https?:\/\//i.test(a)) a = "http://" + a;
+  if (!a.endsWith("/")) a += "/";
+  return a;
+}
+const zweistellig = n => String(n).padStart(2, "0");
+function zeitText(d) { return zweistellig(d.getHours()) + ":" + zweistellig(d.getMinutes()) + ":" + zweistellig(d.getSeconds()); }
+function dateiName(d, nr) {
+  return "bewegung_" + d.getFullYear() + "-" + zweistellig(d.getMonth() + 1) + "-" + zweistellig(d.getDate()) + "_" +
+         zweistellig(d.getHours()) + "-" + zweistellig(d.getMinutes()) + "-" + zweistellig(d.getSeconds()) + "_nr" + nr + ".jpg";
+}
+
+/* ---------------------------------------------------------------- 1. Adresse über USB (Web Serial) */
+if (!("serial" in navigator)) {
+  $("usb").disabled = true;
+  $("usb").title = "Dieser Browser kann nicht seriell lesen (nur Chrome oder Edge). Die Adresse 192.168.4.1 gilt trotzdem.";
+  zustand($("usbZustand"), "seriell nicht möglich – Vorgabe-Adresse gilt", "grau");
+}
+
+async function usbVerbinden() {
+  try {
+    port = await navigator.serial.requestPort();
+  } catch (e) { zustand($("usbZustand"), "kein Anschluss gewählt – Vorgabe-Adresse gilt", "grau"); return; }
+  $("usb").disabled = true;
+  $("usb").title = "Die Seite liest bereits über USB.";
+  try {
+    // CH340-Falle: erst mit 9600 Baud öffnen und schließen, dann 115200 (sonst sperrt Windows den Wandler).
+    await port.open({ baudRate: 9600 }); await port.setSignals({ dataTerminalReady: false, requestToSend: false }); await port.close();
+    await port.open({ baudRate: 115200 });
+    await port.setSignals({ dataTerminalReady: false, requestToSend: false });   // beide gleichzeitig aus: kein Reset, kein Bootlader
+  } catch (e) {
+    zustand($("usbZustand"), "seriell nicht möglich – Vorgabe-Adresse gilt", "schlecht");
+    protokoll("Anschluss lässt sich nicht öffnen: " + e.message + "\n(Hält Thonny ihn noch? Dann Thonny schließen.)");
+    $("usb").disabled = false; $("usb").title = ""; port = null; return;
+  }
+  zustand($("usbZustand"), "verbunden – warte auf Adresse …", "grau");
+  lesen();
+}
+
+async function lesen() {
+  const dek = new TextDecoder(); let rest = "";
+  try {
+    while (port && port.readable) {
+      leser = port.readable.getReader();
+      try {
+        while (true) {
+          const { value, done } = await leser.read();
+          if (done) break;
+          rest += dek.decode(value, { stream: true });
+          let i;
+          while ((i = rest.indexOf("\n")) >= 0) {
+            const zeile = rest.slice(0, i).replace(/\r$/, ""); rest = rest.slice(i + 1);
+            zeileAuswerten(zeile);
+          }
+        }
+      } finally { leser.releaseLock(); leser = null; }
+    }
+  } catch (e) {
+    protokoll("USB getrennt: " + e.message);
+  }
+  zustand($("usbZustand"), "USB getrennt – letzte Adresse gilt weiter", "grau");
+  $("usb").disabled = false; $("usb").title = ""; port = null;
+}
+
+function zeileAuswerten(zeile) {
+  if (!zeile.trim()) return;
+  protokoll(zeile);
+  const m = zeile.match(/KAMERA-URL\s+(https?:\/\/\S+)(?:\s+WLAN\s+(.+))?/);
+  if (m) {
+    const neu = m[1].endsWith("/") ? m[1] : m[1] + "/";
+    const wlan = m[2] ? m[2].trim() : "";
+    if ($("adresse").value.trim() !== neu) $("adresse").value = neu;
+    zustand($("usbZustand"), "Adresse über USB: " + neu.replace(/^https?:\/\//, "").replace(/\/$/, ""), "gut");
+    if (wlan) $("usbZustand").title = "WLAN der Kamera: " + wlan;
+    if (!abfrage) empfangStarten();
+  }
+}
+
+/* ---------------------------------------------------------------- 2. Bilder über WLAN */
+async function holeMitFrist(url, art) {
+  const ab = new AbortController(); const t = setTimeout(() => ab.abort(), art === "blob" ? BILD_FRIST_MS : ZEITLIMIT_MS);
+  try {
+    const r = await fetch(url, { cache: "no-store", signal: ab.signal });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    return art === "json" ? await r.json() : await r.blob();
+  } finally { clearTimeout(t); }
+}
+
+let laeuft = false;
+async function einmalFragen() {
+  if (laeuft) return; laeuft = true;
+  const a = adresse();
+  try {
+    const e = await holeMitFrist(a + "ereignis", "json");
+    if (fehlFragen >= 3) protokoll("Verbindung wieder da – automatisch neu verbunden");
+    fehlFragen = 0;
+    if (!bildFehler) zustand($("wlanZustand"), "Kamera antwortet", "gut");
+    $("zNr").textContent = e.nr;
+    if (letzteNr === null || e.nr !== letzteNr) {  // 1.2: Nummer erst nach angekommenem Bild übernehmen
+      const neu = letzteNr !== null;
+      if (e.nr > 0) {
+        zustand($("wlanZustand"), "lade Bild Nr. " + e.nr + " …", "grau");
+        try { await bildHolen(a, e, neu); bildFehler = false; zustand($("wlanZustand"), "Kamera antwortet", "gut"); }
+        catch (err) {
+          bildFehler = true;
+          const grund = err.name === "AbortError" ? "nach " + BILD_FRIST_MS / 1000 + " s nicht angekommen" : err.message;
+          zustand($("wlanZustand"), "Bild Nr. " + e.nr + " " + grund + " – neuer Versuch", "schlecht");
+          protokoll("Bild Nr. " + e.nr + ": " + grund); return;
+        }
+      }
+      letzteNr = e.nr;
+    }
+  } catch (err) {
+    if (++fehlFragen === 3) protokoll("Verbindung unterbrochen – die Seite verbindet automatisch neu");
+    if (fehlFragen >= 3) zustand($("wlanZustand"), "Verbindung unterbrochen – verbinde automatisch neu (Versuch " + (fehlFragen - 2) + ") · WLAN der Kamera verbunden?", "schlecht");
+  } finally { laeuft = false; }
+}
+
+async function bildHolen(a, e, neu) {
+  const t0 = performance.now();
+  const blob = await holeMitFrist(a + "letztes.jpg?nr=" + e.nr, "blob");
+  if (blob.size < 100) throw new Error("Bild zu klein (" + blob.size + " Byte)");
+  const d = new Date();
+  $("zDauer").textContent = ((performance.now() - t0) / 1000).toFixed(1) + " s";
+  if (neu) empfangen++;
+  $("zEmpf").textContent = empfangen;
+  $("zZeit").textContent = zeitText(d);
+  $("zByte").textContent = (blob.size / 1024).toFixed(1) + " kB";
+  $("zAnteil").textContent = (e.anteil != null ? (e.anteil * 100).toFixed(1) + " %" : "–");
+  const url = URL.createObjectURL(blob);
+  zeigen(url, "Bewegung Nr. " + e.nr, "empfangen " + zeitText(d) + (neu ? "" : " (lag schon in der Kamera)"), dateiName(d, e.nr));
+  galerie(url, e.nr, d);
+  if (neu) { $("rahmen").classList.add("neu"); setTimeout(() => $("rahmen").classList.remove("neu"), 150); }
+  if (ordner) speichern(blob, dateiName(d, e.nr));
+  fetch(a + "gesehen?nr=" + e.nr, { cache: "no-store" }).catch(() => {});   // 1.2: Kamera blitzt erst jetzt (einmal je Bild, auch beim ersten)
+}
+
+function zeigen(url, titel, unter, name) {
+  $("gross").src = url; $("gross").hidden = false; $("leer").hidden = true;
+  anzeigeName = name; $("bildLaden").disabled = false; $("bildLaden").title = "speichert " + name + " im Download-Ordner";
+  $("titel").textContent = titel; $("unter").textContent = unter; anzeigeUrl = url;
+  for (const f of $("galerie").children) f.classList.toggle("aktiv", f.dataset.url === url);
+}
+
+function galerie(url, nr, d) {
+  const g = $("galerie");
+  const f = document.createElement("figure"); f.dataset.url = url;
+  const i = document.createElement("img"); i.src = url; i.alt = "Bewegung Nr. " + nr;
+  const c = document.createElement("figcaption"); c.textContent = "Nr. " + nr + " · " + zeitText(d);
+  f.append(i, c); f.title = "groß anzeigen";
+  f.addEventListener("click", () => zeigen(url, "Bewegung Nr. " + nr, "empfangen " + zeitText(d), dateiName(d, nr)));
+  g.prepend(f);
+  while (g.children.length > MAX_GALERIE) { const alt = g.lastElementChild; if (alt.dataset.url !== anzeigeUrl) URL.revokeObjectURL(alt.dataset.url); alt.remove(); }
+  for (const x of g.children) x.classList.toggle("aktiv", x.dataset.url === anzeigeUrl);
+}
+
+function empfangStarten() {
+  if (abfrage) return;
+  letzteNr = null;
+  abfrage = setInterval(einmalFragen, TAKT_MS); einmalFragen();
+  $("start").disabled = true; $("halt").disabled = false;
+  $("start").title = "Der Empfang läuft bereits."; $("halt").title = "";
+  zustand($("wlanZustand"), "frage die Kamera …", "grau");
+  felderGesetzt = false; zustandTakt = setInterval(zustandHolen, 3000); zustandHolen();
+}
+function empfangHalten() {
+  clearInterval(abfrage); abfrage = null; clearInterval(zustandTakt); zustandTakt = null;
+  steuerSperren("gesperrt: erst „Empfang starten“");
+  $("start").disabled = false; $("halt").disabled = true;
+  $("start").title = ""; $("halt").title = "Der Empfang ist schon aus.";
+  zustand($("wlanZustand"), "Empfang aus", "grau");
+}
+
+/* ---------------------------------------------------------------- 4. Kamera steuern (1.1) */
+const STEUERKNOEPFE = ["wacheAn", "wacheAus", "fotoJetzt", "ledTest", "einstellen"];
+function steuerSperren(grund) {
+  for (const id of STEUERKNOEPFE) { $(id).disabled = !!grund; $(id).title = grund || ""; }
+  if (grund) $("steuerZustand").textContent = grund;
+}
+function zustandZeigen(z) {
+  kameraDa = true;
+  zustand($("wacheZustand"), "Wächter: " + (z.wache ? "an – erkennt Bewegung" : "aus – erkennt nichts"), z.wache ? "gut" : "schlecht");
+  $("zPruef").textContent = z.graubilder; $("zFehler").textContent = z.fehler;
+  $("zFrei").textContent = Math.round(z.frei_byte / 1024) + " kB";
+  $("zLauf").textContent = z.laufzeit_s != null ? Math.floor(z.laufzeit_s / 60) + " min " + (z.laufzeit_s % 60) + " s" : "–";
+  if (!felderGesetzt) {
+    $("eSchwelle").value = z.schwelle; $("eAnteil").value = +(z.anteil * 100).toFixed(2);
+    $("eRuhe").value = z.ruhe_ms / 1000; $("eBlitz").value = z.blitz_ms; felderGesetzt = true;
+  }
+  if (befehlLaeuft) return;                       // Knöpfe bleiben gesperrt, bis der Befehl beantwortet ist
+  steuerSperren("");
+  $("wacheAn").disabled = !!z.wache; $("wacheAn").title = z.wache ? "Der Wächter ist schon an." : "";
+  $("wacheAus").disabled = !z.wache; $("wacheAus").title = z.wache ? "" : "Der Wächter ist schon aus.";
+}
+async function zustandHolen() {
+  try { zustandZeigen(await holeMitFrist(adresse() + "status", "json")); fehlZustand = 0; }
+  catch (e) { if (++fehlZustand >= 3) { kameraDa = false; if (!befehlLaeuft) steuerSperren("gesperrt: Kamera antwortet nicht (3 Versuche) – WLAN der Kamera verbunden?"); } }
+}
+async function steuern(pfad, text) {
+  befehlLaeuft = true; steuerSperren("gesperrt: Befehl läuft …");
+  try {
+    const ab = new AbortController(); const t = setTimeout(() => ab.abort(), 15000);
+    const r = await fetch(adresse() + pfad, { cache: "no-store", signal: ab.signal }); clearTimeout(t);
+    const j = await r.json();
+    if (!r.ok) { $("steuerZustand").textContent = "abgewiesen: " + (j.fehler || []).join("; "); }
+    else { $("steuerZustand").textContent = text; if (j.wache !== undefined) zustandZeigen(j); }
+  } catch (e) { $("steuerZustand").textContent = "keine Antwort: " + e.message; }
+  befehlLaeuft = false; await zustandHolen();
+}
+function einstellen() {
+  const w = { schwelle: $("eSchwelle"), anteil: $("eAnteil"), ruhe: $("eRuhe"), blitz: $("eBlitz") };
+  for (const [k, el] of Object.entries(w)) {
+    const v = Number(el.value);
+    if (el.value === "" || !Number.isFinite(v) || v < Number(el.min) || v > Number(el.max)) {
+      $("steuerZustand").textContent = "nicht übertragen: " + el.labels[0].textContent + " – Wert " + el.value; el.focus(); return;
+    }
+  }
+  steuern("steuern?schwelle=" + Number(w.schwelle.value) + "&anteil=" + (Number(w.anteil.value) / 100) +
+          "&ruhe_ms=" + Math.round(Number(w.ruhe.value) * 1000) + "&blitz_ms=" + Math.round(Number(w.blitz.value)),
+          "Einstellungen übertragen und in der Kamera gespeichert");
+}
+
+/* ---------------------------------------------------------------- 3. Speicherordner (File System Access) */
+if (!("showDirectoryPicker" in window)) {
+  $("ordner").disabled = true;
+  $("ordner").title = "Dieser Browser kann keinen Ordner wählen (nur Chrome oder Edge). Bilder bleiben auf der Seite.";
+  zustand($("ordnerZustand"), "Ordnerwahl hier nicht möglich", "grau");
+}
+async function ordnerWaehlen() {
+  try {
+    ordner = await window.showDirectoryPicker({ mode: "readwrite" });
+    zustand($("ordnerZustand"), "speichert in: " + ordner.name, "gut");
+  } catch (e) { if (!ordner) zustand($("ordnerZustand"), "kein Ordner – Bilder nur hier", "grau"); }
+}
+async function speichern(blob, name) {
+  try {
+    const h = await ordner.getFileHandle(name, { create: true });
+    const w = await h.createWritable(); await w.write(blob); await w.close();
+    protokoll("gespeichert: " + name);
+  } catch (e) {
+    zustand($("ordnerZustand"), "Speichern ging nicht: " + e.message, "schlecht");
+  }
+}
+
+$("usb").addEventListener("click", usbVerbinden);
+$("start").addEventListener("click", empfangStarten);
+$("halt").addEventListener("click", empfangHalten);
+$("ordner").addEventListener("click", ordnerWaehlen);
+$("wacheAn").addEventListener("click", () => steuern("steuern?wache=1", "Wächter eingeschaltet"));
+$("wacheAus").addEventListener("click", () => steuern("steuern?wache=0", "Wächter ausgeschaltet"));
+$("fotoJetzt").addEventListener("click", () => steuern("foto", "Foto gemacht – erscheint gleich"));
+$("ledTest").addEventListener("click", () => steuern("blitz", "LED hat geblitzt"));
+$("einstellen").addEventListener("click", einstellen);
+steuerSperren("gesperrt: erst „Empfang starten“");
+$("bildLaden").addEventListener("click", () => {
+  if (!anzeigeUrl) return;
+  const a = document.createElement("a"); a.href = anzeigeUrl; a.download = anzeigeName || "bewegung.jpg";
+  document.body.append(a); a.click(); a.remove(); protokoll("heruntergeladen: " + a.download);
+});
+if (VON_KAMERA) {                                 // 1.1: Seite kommt von der Kamera -> ihre Adresse, sofort empfangen
+  $("adresse").value = location.origin + "/";
+  zustand($("usbZustand"), "nicht nötig – die Seite kommt von der Kamera", "gut");
+  $("usb").disabled = true; $("usb").title = "Die Seite kommt von der Kamera selbst; die Adresse steht schon fest.";
+  if (!("showDirectoryPicker" in window)) zustand($("ordnerZustand"), "Ordner hier nicht möglich – Bild einzeln herunterladen", "grau");
+  empfangStarten();
+}
+$("adresse").addEventListener("change", () => { if (abfrage) { empfangHalten(); empfangStarten(); } });
+$("halt").title = "Der Empfang ist schon aus.";
+</script>
+</body>
+</html>
